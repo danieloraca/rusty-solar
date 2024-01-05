@@ -1,45 +1,61 @@
-use std::env;
+use std::io;
 mod dynamo_db;
 
-pub async fn cli() {
-    let args: Vec<String> = env::args().collect();
+pub async fn cli_menu() {
+    loop {
+        println!("Please select an option:");
+        println!("1. Create a solar system");
+        println!("2. Delete a solar system");
+        println!("3. List first 5 solar systems");
+        println!("4. Exit");
 
-    if args.len() == 1 {
-        println!("No arguments passed.....");
-        dynamo_db::list_first_5_items().await.unwrap();
-        return;
-    }
+        let mut option = String::new();
+        io::stdin()
+            .read_line(&mut option)
+            .expect("Failed to read line");
 
-    if args[1] == "create-solar-system" {
-        println!("Creating a solar system.....");
-        if args.len() == 2 {
-            println!("No name provided for solar system");
-            return;
+        let option: u32 = match option.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Please enter a number");
+                continue;
+            },
+        };
+
+        match option {
+            1 => {
+                println!("Creating a solar system.....");
+                println!("Please enter a name for the solar system");
+                let mut name = String::new();
+                io::stdin()
+                    .read_line(&mut name)
+                    .expect("Failed to read line");
+                let name = name.trim();
+                dynamo_db::create_new_solar_system(name).await.unwrap();
+            },
+            2 => {
+                println!("Deleting a solar system.....");
+                println!("Please enter an id for the solar system");
+                let mut id = String::new();
+                io::stdin()
+                    .read_line(&mut id)
+                    .expect("Failed to read line");
+                let id = id.trim();
+                dynamo_db::delete_solar_system(id).await.unwrap();
+            },
+            3 => {
+                println!("Listing first 5 solar systems.....");
+                dynamo_db::list_first_5_items().await.unwrap();
+            },
+            4 => {
+                println!("Exiting.....");
+                break;
+            },
+            _ => {
+                println!("Please enter a valid option");
+                continue;
+            },
         }
-
-        let name = &args[2];
-        dynamo_db::create_new_solar_system(name).await.unwrap();
     }
-
-    if args[1] == "delete-solar-system" {
-        println!("Deleting a solar system.....");
-        if args.len() == 2 {
-            println!("No id provided for solar system");
-            return;
-        }
-
-        let id = &args[2];
-        dynamo_db::delete_solar_system(id).await.unwrap();
-    }
-
-    if args[1] == "help" {
-        println!("Help");
-    } else if args[1] == "version" {
-        println!("Version");
-    } else {
-        println!("No known arguments passed");
-    }
-
-    println!("{:?}", args);
 }
 
